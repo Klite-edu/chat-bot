@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: myapp  # Container name for easy reference
+    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/myapp  # Mount the current directory to the container's /myapp directory
+    ports:
+      - "8000:8000"  # Expose port 8000 for accessing Django app in the browser
+    environment:
+      - PYTHONUNBUFFERED=1  # Prevents Python output buffering, useful for logs
