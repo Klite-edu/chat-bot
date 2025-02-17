@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload File</title>
+    <style>
+        /* Basic reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Body styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212; /* Dark background */
+            color: #e0e0e0; /* Light text color */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        /* Form container */
+        .form-container {
+            background-color: #1e1e1e; /* Slightly lighter dark background for the form */
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        /* Button styling */
+        .action-btn {
+            background-color: #6200ea; /* Purple button color for dark theme */
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 0;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background-color: #3700b3; /* Darker purple when hovering */
+        }
+
+        /* Select dropdown styling */
+        select {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            border-radius: 5px;
+            margin: 10px 0;
+            background-color: #333;
+            color: #fff;
+        }
+
+        /* File upload styling */
+        input[type="file"] {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            border-radius: 5px;
+            margin: 10px 0;
+            background-color: #333;
+            color: #fff;
+        }
+
+        /* Input field styling */
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            border-radius: 5px;
+            margin: 10px 0;
+            background-color: #333;
+            color: #fff;
+        }
+
+        /* Labels */
+        label {
+            display: block;
+            margin-bottom: 5px;
+            text-align: left;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h1>Upload Your File</h1>
+
+        <form method="POST" enctype="multipart/form-data" action="{% url 'file_upload'%}">
+            {% csrf_token %}
+            <!-- Bussiness name -->
+            <label for="Bussiness_name">Bussiness Name</label>
+            <input type="text" name="bussiness_name" placeholder="Bussiness Name">
+            <!-- Select Model -->
+            <label for="model">Select Model</label>
+            <select name="selected_model" id="model" required>
+                <option value="">-- Select a Model --</option>
+                {% for model in model_list %}
+                    <option value="{{ model }}">{{ model }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Upload File -->
+            <label for="uploaded_file">Upload your file (optional)</label>
+            <input type="file" name="uploaded_file" id="uploaded_file" accept=".txt,.pdf,.docx,.jpg">
+
+            <!-- Select from Saved Files -->
+            <label for="existing_file">Select from Saved Files</label>
+            <select name="existing_file" id="existing_file">
+                <option value="">-- Select a Saved File --</option>
+                {% for file in existing_files %}
+                    <option value="{{ file }}">{{ file }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Select from Saved API Keys -->
+            <label for="existing_api_key">Select from Saved API Keys</label>
+            <select name="existing_api_key" id="existing_api_key">
+                <option value="">-- Select a Saved API Key --</option>
+                {% for api_key in api_keys %}
+                    <option value="{{ api_key }}">{{ api_key }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- API Key -->
+            <label for="api_key">API Key</label>
+            <input type="text" name="api_key" id="api_key" placeholder="Enter your API Key" value="{{ current_api }}" required>
+
+            <!-- Submit Button -->
+            <button type="submit" class="action-btn">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        // Function to toggle the input fields based on the user's selection
+        document.getElementById('existing_api_key').addEventListener('change', function() {
+            const apiKeyInput = document.getElementById('api_key');
+            const existingApiKey = this.value;
+            
+            if (existingApiKey) {
+                // Disable the new API key input if an existing key is selected
+                apiKeyInput.disabled = true;
+                apiKeyInput.value = ''; // Clear the text field when existing API key is selected
+            } else {
+                // Enable the new API key input if no existing key is selected
+                apiKeyInput.disabled = false;
+            }
+        });
+
+        // Ensure that the input is disabled by default if there's already an existing API key selected when the page loads
+        window.onload = function() {
+            const existingApiKey = document.getElementById('existing_api_key').value;
+            const apiKeyInput = document.getElementById('api_key');
+            if (existingApiKey) {
+                apiKeyInput.disabled = true;
+                apiKeyInput.value = ''; // Clear the text field if an existing key is selected
+            }
+        };
+    </script>
+
+</body>
+</html>

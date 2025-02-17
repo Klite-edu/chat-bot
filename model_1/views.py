@@ -1,0 +1,277 @@
+from django.shortcuts import render, redirect
+from . import remote_ollama
+from . import filter
+from collections import deque
+from django.core.files.storage import FileSystemStorage
+import os
+from django.conf import settings
+from .models import Bussiness, Client, Chats  # Import the Bussiness model
+from datetime import datetime
+from django.utils import timezone
+from django.contrib import messages
+
+# List of models
+model_list = ['qwen-2.5-32b', 'qwen-2.5-coder-32b', 'deepseek-r1-distill-qwen-32b', 'deepseek-r1-distill-llama-70b', 'gemma2-9b-it', 'llama-3.1-8b-instant', 'llama-3.2-11b-vision-preview', 'llama-3.2-1b-preview', 'llama-3.2-3b-preview', 'llama-3.2-90b-vision-preview', 'llama-3.3-70b-specdec', 'llama-3.3-70b-versatile', 'llama-guard-3-8b', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768']
+
+# Initialize instructions and conversation history
+conversation_history = deque(maxlen=10)
+
+def get_saved_business_apis():
+    # Fetch all Bussiness models and extract the API keys
+    businesses = Bussiness.objects.all()
+    return [business.api_key for business in businesses]
+
+def save_new_api_key(business_name, api_key, file, selected_model):
+    new_business = Bussiness(
+        bussiness_name=business_name,
+        api_key=api_key,
+        file=file,
+        llm_model=selected_model
+    )
+    new_business.save()
+
+def file_upload(request):
+    # Retrieve session data if available
+    api_keys = get_saved_business_apis()  # Fetch API keys from the Bussiness model
+    instructions = request.session.get('instructions', [])
+    in_use_model = request.session.get('in_use_model', 'llama-3.1-8b-instant')
+    current_api = request.session.get('current_api', '')
+
+    media_path = settings.MEDIA_ROOT  # Path to the media folder
+
+    # Get a list of existing .txt files in the media folder
+    existing_files = [file for file in os.listdir(media_path) if file.endswith('.txt')]
+
+    if request.method == 'POST':
+        # Handle file upload
+        business_name = request.POST.get('bussiness_name')
+        uploaded_file = request.FILES.get('uploaded_file')
+        selected_file = request.POST.get('existing_file')
+        selected_model = request.POST.get('selected_model')  # Get the selected model
+        api_key = request.POST.get('api_key')  # Get the new API key
+        existing_api_key = request.POST.get('existing_api_key')  # Get the selected API key
+
+        if uploaded_file:
+            file = uploaded_file
+        elif selected_file:
+            file = selected_file
+
+        # Handle API key selection logic
+        if existing_api_key:
+            api_key = existing_api_key  # Use the selected API key
+        elif not api_key:
+            # If no API key is provided, return an error
+            print("No API key provided.")
+            return redirect('file_upload')  # Redirect back with an error message
+        elif api_key:
+            # If it's a new API key, save it and ensure only one API key exists
+            save_new_api_key(business_name, api_key, file, selected_model)
+
+        # Check if any of the values have changed and reset session data accordingly
+        if selected_model != in_use_model or api_key != current_api:
+            # Reset session data if new model or API key is provided
+            request.session['instructions'] = []
+            request.session['in_use_model'] = selected_model
+            request.session['current_api'] = api_key
+
+        # Handle the file selection or upload
+        if uploaded_file:
+            # If a new file is uploaded
+            file_path = os.path.join(media_path, uploaded_file.name)
+            if os.path.exists(file_path):
+                print(f"File {uploaded_file.name} already exists.")
+            else:
+                fs = FileSystemStorage()
+                filename = fs.save(uploaded_file.name, uploaded_file)
+                file_path = os.path.join(media_path, filename)
+
+            # Fine-tune with the newly uploaded file
+            instructions = filter.fine_tune(file_path)
+
+        elif selected_file:
+            # If an existing file is selected
+            file_path = os.path.join(media_path, selected_file)
+            instructions = filter.fine_tune(file_path)
+
+        # Update the session with new instructions and model
+        request.session['instructions'] = instructions
+        request.session['in_use_model'] = selected_model
+        request.session['current_api'] = api_key
+
+        # Redirect to home after processing (this will load the new session)
+        print('before redirect')
+        return redirect('index')
+
+    # Render the page with existing files and models if it's not a POST request
+    return render(request, 'model_1/upload_file.html', {
+        'existing_files': existing_files,
+        'model_list': model_list,
+        'api_keys': api_keys,  # Pass the API keys fetched from the Bussiness model
+        'current_api': current_api
+    })
+
+
+
+def home(request, bussiness_name, client_number):
+    # Check if the client is logged in (i.e., check for session data)
+    if not request.session.get('client_number') or not request.session.get('bussiness_name'):
+        # If not logged in, redirect to login page with an error message
+        messages.error(request, 'You need to log in first to access this page.')
+        return redirect('client_login')
+
+    # I need to access all other details using some code because sessions are not looking reliable right now.
+
+    # Proceed with rendering the home page if logged in
+    api_key = request.session.get('api_key')
+    file = request.session.get('file')
+    model = request.session.get('model')
+
+    # Retrieve previous chat history from the database
+    previous_chats = Chats.objects.filter(
+        client_number=client_number, 
+        bussiness_name=bussiness_name
+    ).order_by('time_of_chat')  # Order by time to display the chat in sequence
+    
+    conversation_history = [
+        {'sender': 'User' if chat.is_client else 'Bot', 'text': chat.chat, 
+         'identifier': client_number if chat.is_client else bussiness_name}
+        for chat in previous_chats
+    ]
+    
+    # Handle chat submission
+    if request.method == 'POST':
+        user_chat = request.POST.get('user_chat')  # Get the user's chat input
+
+        if user_chat:  # If user chat exists
+            # Send user message to bot and get response
+            media_path = settings.MEDIA_ROOT
+            file_path = os.path.join(media_path, file)
+            instructions = filter.fine_tune(file_path)
+            bot_chat = remote_ollama.chat_bot(user_chat, instructions, model, api_key)
+            # Append user and bot messages to conversation history
+            conversation_history.append({'sender': 'User', 'text': user_chat, 'identifier': client_number})
+            conversation_history.append({'sender': 'Bot', 'text': bot_chat, 'identifier': bussiness_name})
+
+            # Save user chat to the database
+            Chats.objects.create(
+                chat=user_chat,
+                client_number=client_number,
+                bussiness_name=bussiness_name,
+                is_client=True,
+                time_of_chat=timezone.now()  # Save the time of the chat
+            )
+            print(f'model = {model}')
+            # Save bot chat to the database
+            Chats.objects.create(
+                chat=bot_chat,
+                client_number=client_number,
+                bussiness_name=bussiness_name,
+                is_client=False,
+                time_of_chat=timezone.now()  # Save the time of the chat
+            )
+
+            # Save conversation history to the session
+            request.session['conversation_history'] = conversation_history
+
+    # Render home template with all necessary data
+    return render(request, 'model_1/home.html', {
+        'conversation': conversation_history,
+        'client_number': client_number,
+        'bussiness_name': bussiness_name,
+        'api_key': api_key,
+        'file': file,
+        'model': model
+    })
+
+def exit_session(request):
+    # Clear the session to end the current session
+    request.session.flush()
+
+    # Redirect the user back to the file upload page
+    return redirect('index')
+
+def index(request):
+    return render(request, 'model_1/index.html')
+
+def client_page(request):
+    return render(request, 'model_1/client_page.html')
+
+def get_saved_business_names():
+    # Fetch all Bussiness models and extract the API keys
+    businesses = Bussiness.objects.all()
+    return [business.bussiness_name for business in businesses]
+
+def client_sign_up(request):
+    if request.method == 'POST':
+        phone_number = request.POST.get('phone_number')
+        business_name = request.POST.get('bussiness_name')  # Ensure correct field name here
+        # Validation: Ensure phone number and business name are not empty and valid
+        errors = []
+        if not phone_number:
+            errors.append('Phone number is required.')
+        elif len(phone_number) < 10:  # Simple length check for valid phone number
+            errors.append('Phone number must be at least 10 digits long.')
+        
+        if not business_name:
+            errors.append('Business name is required.')
+
+        if errors:
+            business_names = get_saved_business_names()
+            return render(request, 'model_1/client_sign_up.html', {'errors': errors, 'businesses': business_names})
+
+        # Save the client data
+        new_client = Client(
+                client_number=phone_number,
+                bussiness_name=business_name
+            )
+        new_client.save()
+        print('Client saved successfully')
+        
+        # Redirect to the client page or a confirmation message
+        return redirect('client_page')  # Ensure you have 'client_page' defined in your URLs
+
+    # Get all business names for the form dropdown
+    business_names = get_saved_business_names()
+    return render(request, 'model_1/client_sign_up.html', {'businesses': business_names})
+
+def get_client_data(client_number):
+    client_data = {}
+    clients = Client.objects.all()
+    businsess_name = ''
+    for client in clients:
+        if client_number == client.client_number:
+            businsess_name = client.bussiness_name
+            client_data['client_number'] = client.client_number
+            client_data['bussiness_name'] = client.bussiness_name
+
+    # Find corresponding business data
+    bussinesses = Bussiness.objects.all()
+    for business in bussinesses:
+        if businsess_name == business.bussiness_name:
+            client_data['api_key'] = business.api_key
+            client_data['file'] = business.file
+            client_data['model'] = business.llm_model
+    
+    return client_data
+
+def client_login(request):
+    if request.method == 'POST':
+        client_number = request.POST.get('phone_number')
+        client_data = get_client_data(client_number)  # Fetch the client data
+        
+        # Store the details in the session
+        if client_data:
+            request.session['client_number'] = client_data['client_number']
+            request.session['bussiness_name'] = client_data['bussiness_name']
+            request.session['api_key'] = client_data['api_key']
+            request.session['file'] = client_data['file']
+            request.session['model'] = client_data['model']        
+        # Redirect to home page with the necessary arguments
+        bussiness_name = request.session.get('bussiness_name')
+        client_number = request.session.get('client_number')
+
+        # Ensure both bussiness_name and client_number are available before redirecting
+        if bussiness_name and client_number:
+            return redirect('home', bussiness_name=bussiness_name, client_number=client_number)
+
+    return render(request, 'model_1/client_login.html')

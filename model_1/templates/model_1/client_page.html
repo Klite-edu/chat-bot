@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index Page</title>
+    <style>
+        /* Basic reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Body styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212; /* Dark background */
+            color: #e0e0e0; /* Light text color */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        /* Form container */
+        .form-container {
+            background-color: #1e1e1e; /* Slightly lighter dark background for the form */
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            color: #e0e0e0; /* Light text color for the form */
+        }
+
+        /* Button styling */
+        .action-btn {
+            background-color: #6200ea; /* Purple button color for dark theme */
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background-color: #3700b3; /* Darker purple when hovering */
+        }
+
+        /* Message display */
+        .message {
+            margin-top: 20px;
+            color: #e0e0e0; /* Light text color for the message */
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Additional button for Business and Client */
+        .option-btn {
+            background-color: #03a9f4; /* Blue color for options */
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        .option-btn:hover {
+            background-color: #0288d1; /* Darker blue when hovering */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <div class="message">Login or SignUp</div>
+        <a href="{% url 'client_login' %}">
+            <button class="option-btn">Login</button>
+        </a>
+        <a href="{% url 'client_sign_up' %}">
+            <button class="option-btn">Sign Up</button>
+        </a>
+        
+    </div>
+
+</body>
+</html>

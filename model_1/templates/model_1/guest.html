@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest File Upload</title>
+    <style>
+        /* Basic reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Body styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Form container */
+        .form-container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        /* Input styling */
+        input[type="file"] {
+            width: 80%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="file"]:focus {
+            border-color: #007BFF;
+            outline: none;
+        }
+
+        /* Submit button styling */
+        input[type="submit"] {
+            background-color: #007BFF;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        /* Message display */
+        .message {
+            margin-top: 20px;
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Welcome Guest</h2>
+        <form action="{% url 'upload_file' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="document" accept=".pdf,.doc,.docx,.txt,.jpg,.png" required>
+            <input type="submit" value="Upload File">
+        </form>
+        
+        {% if message %}
+            <div class="message">
+                {{ message }}
+            </div>
+        {% endif %}
+        
+    </div>
+
+</body>
+</html>
