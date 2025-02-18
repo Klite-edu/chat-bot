@@ -8,7 +8,8 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
+            background-color: #121212; /* Dark background */
+            color: #e0e0e0; /* Light text */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -17,16 +18,17 @@
         }
 
         .signup-form {
-            background-color: #fff;
+            background-color: #1e1e1e; /* Dark form background */
             padding: 20px;
             border-radius: 5px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             width: 300px;
         }
 
         .signup-form h2 {
             text-align: center;
             margin-bottom: 20px;
+            color: #e0e0e0;
         }
 
         .form-group {
@@ -36,24 +38,28 @@
         .form-group label {
             display: block;
             font-weight: bold;
+            color: #e0e0e0;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 10px;
             font-size: 16px;
-            border: 1px solid #ccc;
+            border: 1px solid #444; /* Dark border */
             border-radius: 5px;
+            background-color: #2c2c2c; /* Dark input fields */
+            color: #e0e0e0; /* Light text in inputs */
         }
 
-        .form-group input:focus {
-            border-color: #6200ea;
+        .form-group input:focus, .form-group select:focus {
+            border-color: #6200ea; /* Purple border on focus */
+            outline: none;
         }
 
         .submit-btn {
             width: 100%;
             padding: 10px;
-            background-color: #6200ea;
+            background-color: #6200ea; /* Purple button */
             color: white;
             border: none;
             border-radius: 5px;
@@ -61,13 +67,18 @@
         }
 
         .submit-btn:hover {
-            background-color: #3700b3;
+            background-color: #3700b3; /* Darker purple on hover */
         }
 
         .error {
             color: red;
             font-size: 14px;
         }
+
+        ul {
+            padding-left: 20px;
+        }
+
     </style>
 </head>
 <body>
@@ -77,27 +88,33 @@
         <form method="POST">
             {% csrf_token %}
             
-            <label for="phone_number">Phone Number:</label>
-            <input type="text" id="phone_number" name="phone_number" required>
+            <div class="form-group">
+                <label for="phone_number">Phone Number:</label>
+                <input type="text" id="phone_number" name="phone_number" required>
+            </div>
             
-            <label for="bussiness_name">Business Name:</label>
-            <select id="bussiness_name" name="bussiness_name" required>
-                <option value="">-- Select a Business --</option>
-                {% for business in businesses %}
-                    <option value="{{ business }}">{{ business }}</option>
-                {% endfor %}
-            </select>
+            <div class="form-group">
+                <label for="bussiness_name">Business Name:</label>
+                <select id="bussiness_name" name="bussiness_name" required>
+                    <option value="">-- Select a Business --</option>
+                    {% for business in businesses %}
+                        <option value="{{ business }}">{{ business }}</option>
+                    {% endfor %}
+                </select>
+            </div>
             
-            <button type="submit">Sign Up</button>
+            <button type="submit" class="submit-btn">Sign Up</button>
             
             {% if errors %}
-                <ul style="color: red;">
+                <ul>
                     {% for error in errors %}
-                        <li>{{ error }}</li>
+                        <li class="error">{{ error }}</li>
                     {% endfor %}
                 </ul>
             {% endif %}
         </form>
         
+    </div>
+
 </body>
 </html>

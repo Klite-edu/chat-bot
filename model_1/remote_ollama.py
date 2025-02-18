@@ -1,7 +1,7 @@
 from groq import Groq
 import logging
 
-def chat_bot(user_chat, instructions, model_type, api_key_user):
+def chat_bot(user_chat, instructions, model_type, api_key_user, chat_history):
     # Define the API key
     api_key = api_key_user
     client = Groq(api_key=api_key)
@@ -25,6 +25,8 @@ def chat_bot(user_chat, instructions, model_type, api_key_user):
         You are a Llama bot designed to engage in a conversation based on a user's provided information.
         You should respond to questions about the following:
     """ 
+    # using previous chats
+    system_instructions = f"Previous conversation:\n{chat_history}\n"
     system_instructions += '\n' + '\n'.join(instructions_list_1)
     system_instructions += '\n' + '\n'.join(instructions_list_2)
 

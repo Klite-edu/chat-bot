@@ -111,7 +111,6 @@ def file_upload(request):
     })
 
 
-
 def home(request, bussiness_name, client_number):
     # Check if the client is logged in (i.e., check for session data)
     if not request.session.get('client_number') or not request.session.get('bussiness_name'):
@@ -119,17 +118,29 @@ def home(request, bussiness_name, client_number):
         messages.error(request, 'You need to log in first to access this page.')
         return redirect('client_login')
 
-    # I need to access all other details using some code because sessions are not looking reliable right now.
+    # Retrieve the Bussiness object based on bussiness_name
+    try:
+        bussiness = Bussiness.objects.get(bussiness_name=bussiness_name)
+    except Bussiness.DoesNotExist:
+        messages.error(request, 'Business not found.')
+        return redirect('client_login')
+
+    # Retrieve the Client object for the provided client_number
+    try:
+        client = Client.objects.get(client_number=client_number, bussiness_name=bussiness)
+    except Client.DoesNotExist:
+        messages.error(request, 'Client not found.')
+        return redirect('client_login')
 
     # Proceed with rendering the home page if logged in
-    api_key = request.session.get('api_key')
-    file = request.session.get('file')
-    model = request.session.get('model')
+    api_key = request.session.get('api_key', bussiness.api_key)
+    file = request.session.get('file', bussiness.file)
+    model = request.session.get('model', bussiness.llm_model)
 
     # Retrieve previous chat history from the database
     previous_chats = Chats.objects.filter(
-        client_number=client_number, 
-        bussiness_name=bussiness_name
+        client_number=client_number,
+        bussiness_name=bussiness
     ).order_by('time_of_chat')  # Order by time to display the chat in sequence
     
     conversation_history = [
@@ -147,7 +158,8 @@ def home(request, bussiness_name, client_number):
             media_path = settings.MEDIA_ROOT
             file_path = os.path.join(media_path, file)
             instructions = filter.fine_tune(file_path)
-            bot_chat = remote_ollama.chat_bot(user_chat, instructions, model, api_key)
+            chat_history_for_model = "\n".join([f"User: {chat.chat}" for chat in previous_chats if chat.is_client])
+            bot_chat = remote_ollama.chat_bot(user_chat, instructions, model, api_key, chat_history_for_model)
             # Append user and bot messages to conversation history
             conversation_history.append({'sender': 'User', 'text': user_chat, 'identifier': client_number})
             conversation_history.append({'sender': 'Bot', 'text': bot_chat, 'identifier': bussiness_name})
@@ -156,7 +168,7 @@ def home(request, bussiness_name, client_number):
             Chats.objects.create(
                 chat=user_chat,
                 client_number=client_number,
-                bussiness_name=bussiness_name,
+                bussiness_name=bussiness,
                 is_client=True,
                 time_of_chat=timezone.now()  # Save the time of the chat
             )
@@ -165,7 +177,7 @@ def home(request, bussiness_name, client_number):
             Chats.objects.create(
                 chat=bot_chat,
                 client_number=client_number,
-                bussiness_name=bussiness_name,
+                bussiness_name=bussiness,
                 is_client=False,
                 time_of_chat=timezone.now()  # Save the time of the chat
             )
@@ -199,7 +211,9 @@ def client_page(request):
 def get_saved_business_names():
     # Fetch all Bussiness models and extract the API keys
     businesses = Bussiness.objects.all()
-    return [business.bussiness_name for business in businesses]
+    businesses_list = [business.bussiness_name for business in businesses]
+    print(businesses_list)
+    return businesses_list
 
 def client_sign_up(request):
     if request.method == 'POST':
@@ -219,59 +233,67 @@ def client_sign_up(request):
             business_names = get_saved_business_names()
             return render(request, 'model_1/client_sign_up.html', {'errors': errors, 'businesses': business_names})
 
+        print(f'client = {phone_number} business = {business_name}')
+        try:
+            bussiness_instance = Bussiness.objects.get(bussiness_name=business_name)
+        except Bussiness.DoesNotExist:
+            # Handle the case where the Bussiness does not exist (optional)
+            return render(request, "client_signup.html", {"errors": ["Business not found"]})
         # Save the client data
         new_client = Client(
                 client_number=phone_number,
-                bussiness_name=business_name
+                bussiness_name=bussiness_instance
             )
-        new_client.save()
-        print('Client saved successfully')
-        
+        new_client.save()        
         # Redirect to the client page or a confirmation message
         return redirect('client_page')  # Ensure you have 'client_page' defined in your URLs
 
     # Get all business names for the form dropdown
     business_names = get_saved_business_names()
+    print(f'bussiness list = {business_names}')
     return render(request, 'model_1/client_sign_up.html', {'businesses': business_names})
 
 def get_client_data(client_number):
     client_data = {}
-    clients = Client.objects.all()
-    businsess_name = ''
-    for client in clients:
-        if client_number == client.client_number:
-            businsess_name = client.bussiness_name
-            client_data['client_number'] = client.client_number
-            client_data['bussiness_name'] = client.bussiness_name
+    try:
+        client = Client.objects.get(client_number=client_number)  # Fetch the client based on client_number
+        business = client.bussiness_name  # This is now a ForeignKey reference to the Bussiness model
 
-    # Find corresponding business data
-    bussinesses = Bussiness.objects.all()
-    for business in bussinesses:
-        if businsess_name == business.bussiness_name:
-            client_data['api_key'] = business.api_key
-            client_data['file'] = business.file
-            client_data['model'] = business.llm_model
-    
+        client_data['client_number'] = client.client_number
+        client_data['bussiness_name'] = business.bussiness_name  # Access the bussiness_name attribute of the Bussiness model
+
+        # Add business-related data
+        client_data['api_key'] = business.api_key
+        client_data['file'] = business.file
+        client_data['model'] = business.llm_model
+
+    except Client.DoesNotExist:
+        client_data = None  # If no client is found, return None
     return client_data
+
 
 def client_login(request):
     if request.method == 'POST':
         client_number = request.POST.get('phone_number')
         client_data = get_client_data(client_number)  # Fetch the client data
         
-        # Store the details in the session
-        if client_data:
+        if client_data:  # If client data is found
+            # Store the details in the session
             request.session['client_number'] = client_data['client_number']
             request.session['bussiness_name'] = client_data['bussiness_name']
             request.session['api_key'] = client_data['api_key']
             request.session['file'] = client_data['file']
-            request.session['model'] = client_data['model']        
-        # Redirect to home page with the necessary arguments
-        bussiness_name = request.session.get('bussiness_name')
-        client_number = request.session.get('client_number')
+            request.session['model'] = client_data['model']
+        
+            # Redirect to home page with the necessary arguments
+            bussiness_name = request.session.get('bussiness_name')
+            client_number = request.session.get('client_number')
 
-        # Ensure both bussiness_name and client_number are available before redirecting
-        if bussiness_name and client_number:
-            return redirect('home', bussiness_name=bussiness_name, client_number=client_number)
+            # Ensure both bussiness_name and client_number are available before redirecting
+            if bussiness_name and client_number:
+                return redirect('home', bussiness_name=bussiness_name, client_number=client_number)
+        else:
+            # Handle invalid client number (optional)
+            return render(request, 'model_1/client_login.html', {'error': 'Client not found'})
 
     return render(request, 'model_1/client_login.html')
