@@ -158,7 +158,13 @@ def home(request, bussiness_name, client_number):
             media_path = settings.MEDIA_ROOT
             file_path = os.path.join(media_path, file)
             instructions = filter.fine_tune(file_path)
-            chat_history_for_model = "\n".join([f"User: {chat.chat}" for chat in previous_chats if chat.is_client])
+            chat_history_for_model = [f"User: {chat.chat}" for chat in previous_chats if chat.is_client]
+            chat_history_for_model_2 = []
+            for i in chat_history_for_model:
+                if i not in chat_history_for_model_2:
+                    chat_history_for_model_2.append(i)
+
+            chat_history_for_model = "\n".join([i for i in chat_history_for_model_2])
             bot_chat = remote_ollama.chat_bot(user_chat, instructions, model, api_key, chat_history_for_model)
             # Append user and bot messages to conversation history
             conversation_history.append({'sender': 'User', 'text': user_chat, 'identifier': client_number})
