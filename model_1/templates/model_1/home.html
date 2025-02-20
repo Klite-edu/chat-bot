@@ -167,7 +167,7 @@
         </div>
 
         <!-- Chat input form -->
-        <form action="{% url 'home' bussiness_name=bussiness_name client_number=client_number %}" method="post">
+        <form action="{% url 'home' encrypted_bussiness_name=bussiness_name encrypted_client_number=client_number %}" method="post">
             {% csrf_token %}
             <div class="input-container">
                 <input type="text" name="user_chat" required placeholder="Type your message..." />

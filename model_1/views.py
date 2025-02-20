@@ -9,6 +9,8 @@ from .models import Bussiness, Client, Chats  # Import the Bussiness model
 from datetime import datetime
 from django.utils import timezone
 from django.contrib import messages
+from .url_safety import encrypt_data, decrypt_data
+from cryptography.fernet import InvalidToken
 
 # List of models
 model_list = ['qwen-2.5-32b', 'qwen-2.5-coder-32b', 'deepseek-r1-distill-qwen-32b', 'deepseek-r1-distill-llama-70b', 'gemma2-9b-it', 'llama-3.1-8b-instant', 'llama-3.2-11b-vision-preview', 'llama-3.2-1b-preview', 'llama-3.2-3b-preview', 'llama-3.2-90b-vision-preview', 'llama-3.3-70b-specdec', 'llama-3.3-70b-versatile', 'llama-guard-3-8b', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768']
@@ -111,11 +113,19 @@ def file_upload(request):
     })
 
 
-def home(request, bussiness_name, client_number):
+def home(request, encrypted_bussiness_name, encrypted_client_number):
     # Check if the client is logged in (i.e., check for session data)
     if not request.session.get('client_number') or not request.session.get('bussiness_name'):
         # If not logged in, redirect to login page with an error message
         messages.error(request, 'You need to log in first to access this page.')
+        return redirect('client_login')
+
+    # Decryption
+    try:
+        bussiness_name = decrypt_data(encrypted_bussiness_name)
+        client_number = decrypt_data(encrypted_client_number)
+    except InvalidToken:
+        messages.error(request, 'The provided encrypted data is invalid or expired.')
         return redirect('client_login')
 
     # Retrieve the Bussiness object based on bussiness_name
@@ -190,16 +200,22 @@ def home(request, bussiness_name, client_number):
 
             # Save conversation history to the session
             request.session['conversation_history'] = conversation_history
-
+     # Encryption
+    encrypt_bussiness_name = encrypt_data(bussiness_name)
+    encrypt_client_number = encrypt_data(client_number)
     # Render home template with all necessary data
     return render(request, 'model_1/home.html', {
         'conversation': conversation_history,
-        'client_number': client_number,
-        'bussiness_name': bussiness_name,
+        'client_number': encrypt_client_number,
+        'bussiness_name': encrypt_bussiness_name,
         'api_key': api_key,
         'file': file,
-        'model': model
+        'model': model,
+        # 'encrypted_bussiness_name':encrypt_bussiness_name,
+        # 'encrypted_client_number':encrypt_client_number
     })
+
+
 
 def exit_session(request):
     # Clear the session to end the current session
@@ -291,14 +307,18 @@ def client_login(request):
             request.session['file'] = client_data['file']
             request.session['model'] = client_data['model']
         
+            
+
             # Redirect to home page with the necessary arguments
             bussiness_name = request.session.get('bussiness_name')
             client_number = request.session.get('client_number')
 
+            # Encryption
+            encrypt_bussiness_name = encrypt_data(bussiness_name)
+            encrypt_client_number = encrypt_data(client_number)
             # Ensure both bussiness_name and client_number are available before redirecting
             if bussiness_name and client_number:
-                return redirect('home', bussiness_name=bussiness_name, client_number=client_number)
-        else:
+                return redirect('home', encrypted_bussiness_name=encrypt_bussiness_name, encrypted_client_number=encrypt_client_number)
             # Handle invalid client number (optional)
             return render(request, 'model_1/client_login.html', {'error': 'Client not found'})
 
