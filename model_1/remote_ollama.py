@@ -49,5 +49,3 @@ def chat_bot(user_chat, instructions, model_type, api_key_user, chat_history):
         logging.error(f"Error during API request: {str(e)}")
         # Return a user-friendly error message
         return "Sorry, there was an issue with the service. Please try again later."
-
-

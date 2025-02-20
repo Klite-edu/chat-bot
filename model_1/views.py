@@ -323,3 +323,9 @@ def client_login(request):
             return render(request, 'model_1/client_login.html', {'error': 'Client not found'})
 
     return render(request, 'model_1/client_login.html')
+
+def Business_page(request):
+    return render(request, 'model_1/Business_page.html')
+
+def Business_login(request):
+    return render(request, 'model_1/Business_login.html')
