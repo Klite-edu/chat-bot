@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'model_1',  # Make sure your app is named correctly here
 ]
 
+FERNET_KEY = b'-X1YWbwaOvPUa1hpQxNapFOsqY9HADe7I-NPOK_mOv4='
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

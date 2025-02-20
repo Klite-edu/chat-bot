@@ -2,7 +2,6 @@ from groq import Groq
 import logging
 
 def chat_bot(user_chat, instructions, model_type, api_key_user, chat_history):
-    print(chat_history)
     # Define the API key
     api_key = api_key_user
     client = Groq(api_key=api_key)
