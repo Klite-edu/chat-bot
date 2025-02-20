@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Index Page</title>
+    <title>Business Page</title>
     <style>
         /* Basic reset */
         * {
@@ -85,14 +85,12 @@
 <body>
 
     <div class="form-container">
-        <div class="message">Select Your Role</div>
-
-        <!-- Option Buttons for Business and Client -->
-         <a href="{% url 'Business_page' %}">
-            <button class="option-btn">Business</button>
-         </a>
-        <a href="{% url 'client_page' %}">
-            <button class="option-btn">Client</button>
+        <div class="message">Login or SignUp</div>
+        <a href="{% url 'Business_login' %}">
+            <button class="option-btn">Login</button>
+        </a>
+        <a href="{% url 'file_upload' %}">
+            <button class="option-btn">Sign Up</button>
         </a>
         
     </div>
