@@ -327,5 +327,35 @@ def client_login(request):
 def Business_page(request):
     return render(request, 'model_1/Business_page.html')
 
+
+
+def get_saved_business_names():
+    businesses = Bussiness.objects.all()
+    business_names = []
+    for i in businesses:
+        business_names.append(i.bussiness_name)
+    return business_names
 def Business_login(request):
-    return render(request, 'model_1/Business_login.html')
+    if request.method == 'POST':
+        business_name = request.POST.get('business')
+        return redirect('Business_dashboard', business_name=business_name)
+    # Getting All business names
+    businesses = get_saved_business_names()
+    return render(request, 'model_1/Business_login.html', {'bussinesses' : businesses})
+
+
+def get_business_details(business_name):
+    clients = Client.objects.all()
+    # Getting Client Names
+    client_names = []
+    api_key = ''
+    for i in clients:
+        if i.bussiness_name.bussiness_name == business_name:
+            client_names.append(i.client_number)
+            api_key = i.bussiness_name.api_key
+            file = i.bussiness_name.file
+            model = i.bussiness_name.llm_model
+    return client_names, api_key, file, model
+def Business_dashboard(request, business_name):
+    client_names, api_key, file, model = get_business_details(business_name)
+    return render(request, 'model_1/Business_dashboard.html', {'business_name':business_name,'clients' : client_names, 'api_key':api_key, 'file':file, 'llm_model':model})
