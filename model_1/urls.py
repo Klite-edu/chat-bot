@@ -8,6 +8,7 @@ urlpatterns = [
     path('file_upload', views.file_upload, name='file_upload'),
     path('Business_page', views.Business_page, name='Business_page'),
     path('Business_login', views.Business_login, name='Business_login'),
+    path('Business_dashboard/<str:business_name>', views.Business_dashboard, name='Business_dashboard'),
     path('client_page', views.client_page, name='client_page'),
     path('client_sign_up', views.client_sign_up, name='client_sign_up'),
     path('client_login', views.client_login, name='client_login'),

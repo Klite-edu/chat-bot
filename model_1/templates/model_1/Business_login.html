@@ -80,12 +80,39 @@
         .option-btn:hover {
             background-color: #0288d1; /* Darker blue when hovering */
         }
+
+        /* Select styling */
+        select {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            border: 2px solid #6200ea;
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        option {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
     </style>
 </head>
 <body>
 
     <div class="form-container">
-        The Login Page Will be Here
+        <form action="{% url 'Business_login' %}" method="POST">
+            {% csrf_token %}
+            <label for="business">Select your business:</label>
+            <select name="business" id="business">
+                {% for business in bussinesses %}
+                    <option value="{{ business }}">{{ business }}</option>
+                {% endfor %}
+            </select>
+            
+            <input type="submit" class="action-btn" value="Login">
+        </form>
     </div>
 
 </body>

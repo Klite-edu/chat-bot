@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Information</title>
+    <style>
+        /* Basic reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Body styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212; /* Dark background */
+            color: #e0e0e0; /* Light text color */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        /* Container for information */
+        .info-container {
+            background-color: #1e1e1e; /* Slightly lighter dark background */
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            color: #e0e0e0; /* Light text color */
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #03a9f4; /* Blue color for title */
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        .info-item {
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-align: left;
+            width: 100%;
+        }
+
+        .info-item span {
+            font-weight: bold;
+        }
+
+        .client-list {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2a2a2a;
+            border-radius: 5px;
+            border: 1px solid #6200ea;
+        }
+
+        /* Additional styling for clients list */
+        .client-item {
+            margin-bottom: 10px;
+            color: #03a9f4;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="info-container">
+        <!-- Business Name -->
+        <h1>{{business_name}}</h1>
+        
+        <!-- Business Information -->
+        <div class="info-item">
+            <span>API Key:</span> {{api_key}}
+        </div>
+        <div class="info-item">
+            <span>File:</span> {{file}}
+        </div>
+        <div class="info-item">
+            <span>LLM Model:</span> {{llm_model}}
+        </div>
+
+        <!-- Client List -->
+        <div class="client-list">
+            <h2>Client List:</h2>
+            {% for client in clients %}
+                <div class="client-item">{{client}}</div>
+            {% endfor %}
+        </div>
+    </div>
+
+</body>
+</html>
