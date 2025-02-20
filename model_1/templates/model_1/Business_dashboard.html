@@ -93,14 +93,22 @@
             <span>LLM Model:</span> {{llm_model}}
         </div>
 
-        <!-- Client List -->
-        <div class="client-list">
-            <h2>Client List:</h2>
-            {% for client in clients %}
-                <div class="client-item">{{client}}</div>
-            {% endfor %}
+        <form action="{% url 'Business_dashboard' business_name=business_name %}" method="post">
+            {% csrf_token %}
+            <!-- Client List -->
+            <div class="client-list">
+                <h2>Client List:</h2>
+                <label for="client">Select your Client:</label>
+                <select name="client" id="client">
+                {% for client in clients %}
+                        <option value="{{ client }}">{{ client }}</option>
+                {% endfor %}
+                <input type="submit">
+            </select>
+            </div>
         </div>
-    </div>
+        </form>
+        
 
 </body>
 </html>

@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, HttpResponse
 from . import remote_ollama
 from . import filter
 from collections import deque
@@ -357,5 +357,50 @@ def get_business_details(business_name):
             model = i.bussiness_name.llm_model
     return client_names, api_key, file, model
 def Business_dashboard(request, business_name):
+    if request.method == 'POST':
+        # show chat of the client with Business
+        current_client  = request.POST.get('client')
+        return redirect('Business_Chat', business_name = business_name, client_number=current_client)
     client_names, api_key, file, model = get_business_details(business_name)
     return render(request, 'model_1/Business_dashboard.html', {'business_name':business_name,'clients' : client_names, 'api_key':api_key, 'file':file, 'llm_model':model})
+
+
+
+def Business_Chat(request, business_name, client_number):
+    print(f"Business Name: {business_name}")
+    print(f"Client Number: {client_number}")
+    
+    # Fetch the business instance based on the business name
+    try:
+        business = Bussiness.objects.get(bussiness_name=business_name)
+    except Bussiness.DoesNotExist:
+        return HttpResponse(f"No business found with name: {business_name}", status=404)
+    
+    # Ensure client_number is an integer
+    try:
+        client_number = int(client_number)
+    except ValueError:
+        return HttpResponse("Invalid client number", status=400)
+
+    # Fetch previous chats based on business instance and client_number
+    previous_chats = Chats.objects.filter(
+        client_number=client_number,
+        bussiness_name=business
+    ).order_by('time_of_chat')
+
+    # Create a list of messages with only relevant information
+    conversation_history = [
+        {'sender': 'User' if chat.is_client else 'Business', 
+        'text': chat.chat, 
+        'identifier': client_number if chat.is_client else chat.bussiness_name.bussiness_name}
+        for chat in previous_chats
+    ]
+
+    print(conversation_history)
+
+    # Handle the case where no previous chats are found
+    if not previous_chats:
+        return HttpResponse("No previous chats found.", status=404)
+
+    # Render the template and pass the previous chats as context
+    return render(request, 'model_1/Business_Chat.html', {'conversation': conversation_history})

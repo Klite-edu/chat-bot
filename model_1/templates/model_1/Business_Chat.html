@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Chat</title>
+    <style>
+        /* General body styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #181818; /* Dark background */
+            color: #e0e0e0; /* Light text */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Chat container */
+        #chat-container {
+            background-color: #2c2c2c; /* Darker container */
+            width: 90%;
+            max-width: 600px;
+            height: 80vh;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 30px;
+            box-sizing: border-box;
+        }
+
+        /* Chat messages area */
+        #chat {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding-right: 10px;
+            max-height: 500px;
+            border-bottom: 1px solid #444;
+        }
+
+        /* Message styling */
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 15px;
+            max-width: 80%;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            background-color: #4CAF50; /* Greenish color for user messages */
+            align-self: flex-end;
+        }
+
+        .bot-message {
+            background-color: #555; /* Darker color for bot messages */
+            align-self: flex-start;
+        }
+
+        /* Input container */
+        .input-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Text input field */
+        input[type="text"] {
+            width: 80%;
+            padding: 12px;
+            border-radius: 20px;
+            border: 1px solid #444;
+            background-color: #333; /* Dark background */
+            color: #e0e0e0;
+            font-size: 16px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        /* Submit button */
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        /* Exit button styling */
+        .exit-button {
+            background-color: #d32f2f; /* Strong red for exit */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px; /* Squared button with slightly rounded edges */
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .exit-button:hover {
+            background-color: #c62828; /* Darker red on hover */
+        }
+
+        /* Scrollbar styling */
+        #chat::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #chat::-webkit-scrollbar-thumb {
+            background-color: #888;
+            border-radius: 10px;
+        }
+
+        #chat::-webkit-scrollbar-thumb:hover {
+            background-color: #555;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #chat-container {
+                width: 95%;
+                padding: 20px;
+            }
+
+            input[type="text"], input[type="submit"] {
+                font-size: 14px;
+            }
+
+            .message {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat">
+            <!-- Iterate through messages from conversation history -->
+            {% for message in conversation %}
+                <div class="message {% if message.sender == 'User' %}user-message{% else %}bot-message{% endif %}">
+                    <strong>{{ message.sender }}:</strong>
+                    {% if message.sender == 'User' %}
+                        {{ message.text }} (Phone: {{ message.identifier }})  <!-- Show user phone number -->
+                    {% else %}
+                        {{ message.text }} (Business: {{ message.identifier }})  <!-- Show business name -->
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+</body>
+</html>
