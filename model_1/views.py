@@ -101,7 +101,6 @@ def file_upload(request):
         request.session['current_api'] = api_key
 
         # Redirect to home after processing (this will load the new session)
-        print('before redirect')
         return redirect('index')
 
     # Render the page with existing files and models if it's not a POST request
@@ -188,7 +187,6 @@ def home(request, encrypted_bussiness_name, encrypted_client_number):
                 is_client=True,
                 time_of_chat=timezone.now()  # Save the time of the chat
             )
-            print(f'model = {model}')
             # Save bot chat to the database
             Chats.objects.create(
                 chat=bot_chat,
@@ -240,6 +238,8 @@ def get_saved_business_names():
 def client_sign_up(request):
     if request.method == 'POST':
         phone_number = request.POST.get('phone_number')
+        client_name = request.POST.get('name')
+        client_email = request.POST.get('email')
         business_name = request.POST.get('bussiness_name')  # Ensure correct field name here
         # Validation: Ensure phone number and business name are not empty and valid
         errors = []
@@ -264,7 +264,9 @@ def client_sign_up(request):
         # Save the client data
         new_client = Client(
                 client_number=phone_number,
-                bussiness_name=bussiness_instance
+                bussiness_name=bussiness_instance,
+                client_name=client_name,
+                client_email=client_email
             )
         new_client.save()        
         # Redirect to the client page or a confirmation message
@@ -272,7 +274,6 @@ def client_sign_up(request):
 
     # Get all business names for the form dropdown
     business_names = get_saved_business_names()
-    print(f'bussiness list = {business_names}')
     return render(request, 'model_1/client_sign_up.html', {'businesses': business_names})
 
 def get_client_data(client_number):
@@ -335,6 +336,7 @@ def get_saved_business_names():
     for i in businesses:
         business_names.append(i.bussiness_name)
     return business_names
+
 def Business_login(request):
     if request.method == 'POST':
         business_name = request.POST.get('business')
@@ -352,55 +354,69 @@ def get_business_details(business_name):
     for i in clients:
         if i.bussiness_name.bussiness_name == business_name:
             client_names.append(i.client_number)
-            api_key = i.bussiness_name.api_key
-            file = i.bussiness_name.file
+            # api_key = i.bussiness_name.api_key
+            # file = i.bussiness_name.file
             model = i.bussiness_name.llm_model
-    return client_names, api_key, file, model
+    return client_names, model
+
+
+def get_client_name_and_email(client_number):
+    client = Client.objects.get(client_number=client_number)
+    return client.client_name, client.client_email
+
+
 def Business_dashboard(request, business_name):
+    # Fetch business and client details
+    client_names, model = get_business_details(business_name)
+
+    # Handle POST request to select client and display their chat
     if request.method == 'POST':
-        # show chat of the client with Business
-        current_client  = request.POST.get('client')
-        return redirect('Business_Chat', business_name = business_name, client_number=current_client)
-    client_names, api_key, file, model = get_business_details(business_name)
-    return render(request, 'model_1/Business_dashboard.html', {'business_name':business_name,'clients' : client_names, 'api_key':api_key, 'file':file, 'llm_model':model})
+        current_client = request.POST.get('client')
+        # Fetch previous chats based on the selected client
+        try:
+            client_number = int(current_client)  # Convert client_number to integer
+        except ValueError:
+            return HttpResponse("Invalid client number", status=400)
 
+        try:
+            business = Bussiness.objects.get(bussiness_name=business_name)
+        except Bussiness.DoesNotExist:
+            return HttpResponse(f"No business found with name: {business_name}", status=404)
 
+        previous_chats = Chats.objects.filter(
+            client_number=client_number,
+            bussiness_name=business
+        ).order_by('time_of_chat')
 
-def Business_Chat(request, business_name, client_number):
-    print(f"Business Name: {business_name}")
-    print(f"Client Number: {client_number}")
-    
-    # Fetch the business instance based on the business name
-    try:
-        business = Bussiness.objects.get(bussiness_name=business_name)
-    except Bussiness.DoesNotExist:
-        return HttpResponse(f"No business found with name: {business_name}", status=404)
-    
-    # Ensure client_number is an integer
-    try:
-        client_number = int(client_number)
-    except ValueError:
-        return HttpResponse("Invalid client number", status=400)
+        # Create a list of messages with only relevant information
+        conversation_history = [
+            {'sender': 'User' if chat.is_client else 'Business',
+             'text': chat.chat,
+             'identifier': client_number if chat.is_client else chat.bussiness_name.bussiness_name}
+            for chat in previous_chats
+        ]
 
-    # Fetch previous chats based on business instance and client_number
-    previous_chats = Chats.objects.filter(
-        client_number=client_number,
-        bussiness_name=business
-    ).order_by('time_of_chat')
+        # If no chats exist, display a message
+        if not previous_chats:
+            conversation_history = [{'sender': 'System', 'text': 'No previous chats found.', 'identifier': ''}]
 
-    # Create a list of messages with only relevant information
-    conversation_history = [
-        {'sender': 'User' if chat.is_client else 'Business', 
-        'text': chat.chat, 
-        'identifier': client_number if chat.is_client else chat.bussiness_name.bussiness_name}
-        for chat in previous_chats
-    ]
+        
+        client_name, client_email = get_client_name_and_email(current_client)
+        # Render the template with updated chat data
+        return render(request, 'model_1/Business_dashboard.html', {
+            'business_name': business_name,
+            'clients': client_names,
+            'llm_model': model,
+            'conversation': conversation_history,
+            'client_name' : client_name,
+            'client_email': client_email,
+            'client_number': current_client
+        })
 
-    print(conversation_history)
-
-    # Handle the case where no previous chats are found
-    if not previous_chats:
-        return HttpResponse("No previous chats found.", status=404)
-
-    # Render the template and pass the previous chats as context
-    return render(request, 'model_1/Business_Chat.html', {'conversation': conversation_history})
+    # If not POST request, just render the page with client list and default information
+    return render(request, 'model_1/Business_dashboard.html', {
+        'business_name': business_name,
+        'clients': client_names,
+        'llm_model': model,
+        'conversation': [{'sender': 'Example', 'text': 'This is example', 'identifier': 'Example_user'}, {'sender': 'Business', 'text': "Hello! I'm Max, assistant to Vikram S Patel. May I know your name, please? How can I assist you with your pipe manufacturing needs today?", 'identifier': 'Pipes'}]
+    })
