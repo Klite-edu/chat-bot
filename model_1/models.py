@@ -11,11 +11,13 @@ class Bussiness(models.Model):
 
 
 class Client(models.Model):
+    client_name = models.CharField(max_length=30, default='noname')
+    client_email = models.CharField(max_length=50, default='no@emal.com')
     client_number = models.CharField(max_length=20)
     bussiness_name = models.ForeignKey(Bussiness, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'client = {self.client_number} bussiness = {self.bussiness_name}'
+        return f'client_name = {self.client_name} bussiness = {self.bussiness_name}'
 
 
 class Chats(models.Model):

@@ -11,104 +11,279 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+    
         /* Body styling */
         body {
-            font-family: Arial, sans-serif;
-            background-color: #121212; /* Dark background */
-            color: #e0e0e0; /* Light text color */
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             height: 100vh;
             margin: 0;
             flex-direction: column;
         }
-
+    
+        /* Main container for left, middle, and right sections */
+        .main-container {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
+            padding: 20px;
+            box-sizing: border-box;
+            flex-wrap: wrap;
+        }
+    
+        /* Left Section: Client List */
+        .left-section {
+            width: 30%; /* Adjust width for responsiveness */
+            padding-right: 20px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            min-height: 300px;
+        }
+    
+        /* Middle Section: Chat Container */
+        .middle-section {
+            width: 40%;
+            padding-left: 0px;
+            box-sizing: border-box;
+            min-height: 400px;
+        }
+    
+        /* Right Section: Client Details */
+        .right-section {
+            width: 30%;
+            padding-left: 10px;
+            box-sizing: border-box;
+            min-height: 400px;
+        }
+    
         /* Container for information */
         .info-container {
-            background-color: #1e1e1e; /* Slightly lighter dark background */
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            background-color: #1e1e1e;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
             width: 100%;
-            max-width: 500px;
+            max-width: 400px;
             text-align: center;
-            color: #e0e0e0; /* Light text color */
-        }
-
-        h1 {
-            font-size: 24px;
-            color: #03a9f4; /* Blue color for title */
+            color: #e0e0e0;
             margin-bottom: 20px;
         }
-
-        h2 {
-            font-size: 18px;
-            color: #ffffff;
-            margin-bottom: 10px;
+    
+        h1 {
+            font-size: 2.5vw;
+            color: #03a9f4;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
         }
-
+    
+        h2 {
+            font-size: 1.5vw;
+            color: #ffffff;
+            margin-bottom: 15px;
+        }
+    
         .info-item {
-            font-size: 16px;
-            margin-bottom: 10px;
+            font-size: 1.2vw;
+            margin-bottom: 15px;
             text-align: left;
             width: 100%;
         }
-
+    
         .info-item span {
             font-weight: bold;
         }
-
+    
         .client-list {
-            margin-top: 20px;
-            padding: 15px;
+            margin-top: 30px;
+            padding: 20px;
             background-color: #2a2a2a;
-            border-radius: 5px;
+            border-radius: 8px;
             border: 1px solid #6200ea;
+            margin-bottom: 20px;
         }
-
-        /* Additional styling for clients list */
+    
+        .scrollable-client-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-height: 200px; /* Set max height to make it scrollable */
+            overflow-y: scroll; /* Ensure scrolling is enabled */
+            padding: 10px;
+            border: 2px solid #03a9f4; /* Add a border to make sure the area is clearly visible */
+        }
+    
         .client-item {
-            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #333333;
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            border: 1px solid #03a9f4;
+        }
+    
+        /* Hover Effect on Cards */
+        .client-item:hover {
+            background-color: #444444;
+            transform: scale(1.05);
+        }
+    
+        .client-item input {
+            display: none;
+        }
+    
+        .client-item label {
+            font-size: 1.5vw;
+            font-weight: bold;
+            color: #ffffff;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+    
+        .client-item input:checked + label {
             color: #03a9f4;
         }
-
+    
+        /* Chat section */
+        .chat-container {
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            width: 100%;
+            max-height: 520px;
+            padding: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+        }
+    
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #444444;
+        }
+    
+        .user-message {
+            background-color: #03a9f4;
+            color: #ffffff;
+        }
+    
+        .bot-message {
+            background-color: #6200ea;
+            color: #ffffff;
+        }
+    
+        .message strong {
+            color: #ffffff;
+        }
+    
+        .message p {
+            font-size: 14px;
+            color: #bbbbbb;
+        }
+    
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .left-section, .middle-section, .right-section {
+                width: 100%;
+                padding: 10px;
+            }
+        }
+    
     </style>
+    
 </head>
 <body>
 
-    <div class="info-container">
-        <!-- Business Name -->
-        <h1>{{business_name}}</h1>
+    <!-- Form to handle the client selection -->
+    <form action="{% url 'Business_dashboard' business_name=business_name %}" method="post" id="client-form">
+        {% csrf_token %}
         
-        <!-- Business Information -->
-        <div class="info-item">
-            <span>API Key:</span> {{api_key}}
-        </div>
-        <div class="info-item">
-            <span>File:</span> {{file}}
-        </div>
-        <div class="info-item">
-            <span>LLM Model:</span> {{llm_model}}
-        </div>
+        <div class="main-container">
+            <!-- Left: Client List Section -->
+            <div class="left-section">
+                <!-- Business Name -->
+                <div class="info-container">
+                    <h1>{{business_name}}</h1>
 
-        <form action="{% url 'Business_dashboard' business_name=business_name %}" method="post">
-            {% csrf_token %}
-            <!-- Client List -->
-            <div class="client-list">
-                <h2>Client List:</h2>
-                <label for="client">Select your Client:</label>
-                <select name="client" id="client">
-                {% for client in clients %}
-                        <option value="{{ client }}">{{ client }}</option>
-                {% endfor %}
-                <input type="submit">
-            </select>
+                    <!-- Business Information -->
+                    <div class="info-item">
+                        <span>LLM Model:</span> {{llm_model}}
+                    </div>
+
+                    <!-- Client List -->
+                    <div class="client-list">
+                        <h2>Client List:</h2>
+                        <label for="client">Select your Client:</label>
+                        <div class="scrollable-client-list">
+                            {% for client in clients %}
+                                <div class="client-item" onclick="selectClient('{{ client }}')">
+                                    <input type="radio" name="client" id="client_{{ forloop.counter }}" value="{{ client }}">
+                                    <label for="client_{{ forloop.counter }}">{{ client }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle: Chat Container Section -->
+            <div class="middle-section">
+                <div class="chat-container">
+                    <div id="chat">
+                        {% for message in conversation %}
+                            <div class="message {% if message.sender == 'User' %}user-message{% else %}bot-message{% endif %}">
+                                <strong>{{ message.sender }}:</strong>
+                                <p>{% if message.sender == 'User' %}{{ message.text }} (Phone: {{ message.identifier }}){% else %}{{ message.text }} (Business: {{ message.identifier }}){% endif %}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Client Details Section -->
+            <div class="right-section">
+                <div class="info-container">
+                    <h2>Client Details:</h2>
+                    <div class="info-item">
+                        <span>Name:</span> {{client_name}}
+                    </div>
+                    <div class="info-item">
+                        <span>Email:</span> {{client_email}}
+                    </div>
+                    <div class="info-item">
+                        <span>Phone:</span> {{client_number}}
+                    </div>
+                </div>
             </div>
         </div>
-        </form>
-        
+    </form>
+
+    <script>
+        function selectClient(client) {
+            // Set the value of the hidden input field
+            document.querySelector('input[name="client"][value="' + client + '"]').checked = true;
+
+            // Submit the form automatically when a client is clicked
+            document.getElementById('client-form').submit();
+        }
+
+        // Force layout update after page load (reflow fix)
+        window.addEventListener('load', function() {
+            document.querySelector('.main-container').style.display = 'flex'; // Reapply flex display if needed
+        });
+    </script>
 
 </body>
 </html>
