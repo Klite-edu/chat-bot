@@ -26,7 +26,8 @@ SECRET_KEY = 'django-insecure-9vxc-w=eqbzfmpgx_j&x&bke))owxa6i!ck&p3n$%s#%=t#$yk
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['http://127.0.0.1/']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -38,7 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'model_1',  # Make sure your app is named correctly here
+    'model_1',
+    'telegram_bot',
+    'sslserver',
+    'django_extensions',
 ]
 
 FERNET_KEY = b'-X1YWbwaOvPUa1hpQxNapFOsqY9HADe7I-NPOK_mOv4='
