@@ -1,108 +1,91 @@
+# telegram_bot/bot.py
 from typing import Final
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from remote_ollama import chat_bot
 import pytz
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-import asyncio
-from remote_ollama import chat_bot
-import sqlite3
+from telegram import Bot
+
+def set_webhook():
+    bot = Bot(token=TOKEN)
+    webhook_url = 'http://127.0.0.1:8000/telegram/webhook/'  # Use your actual domain or ngrok URL
+    bot.set_webhook(url=webhook_url)
+
 
 TOKEN: Final = '7615450891:AAFOtX0zvSeAxPEYdxk-mmeYCwIQ8IJhkcQ'
 BOT_USERNAME: Final = '@tyler_terminator_bot'
 
-timezone = pytz.timezone('Asia/Kolkata')  # IST timezone (you can replace with pytz.utc for UTC)
+timezone = pytz.timezone('Asia/Kolkata')  # IST timezone
 
+# Initialize the scheduler
 scheduler = AsyncIOScheduler(timezone=timezone)
 
+# Start command
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Hello Thankx for chatting with me I am T-800')
 
+# Help command
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('I am T-800 psl type something so i can respond')
 
+# Custom command
 async def custom_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('This is a custom command')
 
-
-def write_in_db(text):
-    conn = sqlite3.connect("chats.db")
-    cursor = conn.cursor()
-
-    # Insert data
-    cursor.execute("INSERT INTO chats (chat) VALUES (?)", (text,))
-    conn.commit()
-
-    conn.close()
-
-
-# function to write in text file
-def write_in_file(text):
-    try:
-        with open('chat_bot_user.txt', 'a') as file:  # Use 'a' to append instead of overwriting
-            file.write(text + '\n')  # Ensure each entry is on a new line
-    except Exception as e:
-        print(f"Error writing to file: {e}")
-
-
-# Responses
+# Response handler
 def handle_responses(text: str) -> str:
     processed: str = text.lower()
-
     return chat_bot(text)
+
     if 'hello' in text:
         return 'Hey, There'
     
     if 'how are you' in text:
         return 'I am good!'
-    
+
     if 'I love python' in text:
         return 'Remember to subscribe'
-    
+
     return 'I do not understand what you wrote...'
 
+# Handle incoming messages
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_type: str = update.message.chat.type
     text: str = update.message.text
-
-    write_in_db(f'User ({update.message.chat.id}) in {message_type}: "{text}"')
-    print(f'User ({update.message.chat.id}) in {message_type}: "{text}"')
 
     if message_type == 'group':
         if BOT_USERNAME in text:
             new_text: str = text.replace(BOT_USERNAME, '').strip()
             response: str = handle_responses(new_text)
         else:
-            return 
+            return
     else:
         response: str = handle_responses(text)
 
-    write_in_db(f'Bot {response}')
-    print(f'Bot {response}')
     await update.message.reply_text(response)
 
 # Error handler
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f'update {update} caused error {context.error}')
 
-# Inside the main function
-if __name__ == '__main__':
+# Function to start the bot
+def start_bot():
     print('Starting bot...')
+    set_webhook()
     app = Application.builder().token(TOKEN).build()
 
-    # Commands
+    # Add command handlers
     app.add_handler(CommandHandler('start', start_command))
     app.add_handler(CommandHandler('help', help_command))
     app.add_handler(CommandHandler('custom', custom_command))
 
-    # Messages
+    # Handle text messages
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
 
     # Add error handler
-    app.add_error_handler(error)  # Correct way to add the error handler
+    app.add_error_handler(error)
 
-    # Start the scheduler before running the bot
-    # scheduler.start()
-
-    # Polls the bot
+    # Poll the bot (can be swapped for webhook later)
     print('Polling...')
     app.run_polling(poll_interval=3)
