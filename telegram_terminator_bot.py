@@ -15,68 +15,52 @@ timezone = pytz.timezone('Asia/Kolkata')  # IST timezone (you can replace with p
 scheduler = AsyncIOScheduler(timezone=timezone)
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Hello Thankx for chatting with me I am T-800')
+    await update.message.reply_text('Hello Thanks for chatting with me I am Hal')
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('I am T-800 psl type something so i can respond')
+    await update.message.reply_text('I am Hal psl type something so i can respond')
 
 async def custom_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('This is a custom command')
 
 
-def write_in_db(text):
+def write_in_db(text, user_id, role):
     conn = sqlite3.connect("chats.db")
     cursor = conn.cursor()
 
     # Insert data
-    cursor.execute("INSERT INTO chats (chat) VALUES (?)", (text,))
+    cursor.execute("INSERT INTO chats (chat, user_ID, role) VALUES (?, ?, ?)", (text,user_id,role, ))
     conn.commit()
 
     conn.close()
 
 
-# function to write in text file
-def write_in_file(text):
-    try:
-        with open('chat_bot_user.txt', 'a') as file:  # Use 'a' to append instead of overwriting
-            file.write(text + '\n')  # Ensure each entry is on a new line
-    except Exception as e:
-        print(f"Error writing to file: {e}")
+
 
 
 # Responses
-def handle_responses(text: str) -> str:
+def handle_responses(text, user_id) -> str:
     processed: str = text.lower()
 
-    return chat_bot(text)
-    if 'hello' in text:
-        return 'Hey, There'
-    
-    if 'how are you' in text:
-        return 'I am good!'
-    
-    if 'I love python' in text:
-        return 'Remember to subscribe'
-    
-    return 'I do not understand what you wrote...'
+    return chat_bot(text, user_id)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_type: str = update.message.chat.type
     text: str = update.message.text
 
-    write_in_db(f'User ({update.message.chat.id}) in {message_type}: "{text}"')
+    write_in_db(text, update.message.chat.id, 'user')
     print(f'User ({update.message.chat.id}) in {message_type}: "{text}"')
 
     if message_type == 'group':
         if BOT_USERNAME in text:
             new_text: str = text.replace(BOT_USERNAME, '').strip()
-            response: str = handle_responses(new_text)
+            response: str = handle_responses(new_text, update.message.chat.id)
         else:
             return 
     else:
-        response: str = handle_responses(text)
+        response: str = handle_responses(text, update.message.chat.id)
 
-    write_in_db(f'Bot {response}')
+    write_in_db(response, update.message.chat.id, 'bot')
     print(f'Bot {response}')
     await update.message.reply_text(response)
 

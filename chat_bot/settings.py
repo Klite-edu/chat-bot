@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'telegram_bot',
     'sslserver',
     'django_extensions',
+    'model_2'
 ]
 
 FERNET_KEY = b'-X1YWbwaOvPUa1hpQxNapFOsqY9HADe7I-NPOK_mOv4='

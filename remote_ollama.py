@@ -1,10 +1,11 @@
 from groq import Groq
 import logging
+import sqlite3
+instructions = """
+        You are Hal a Ai that will answer any question asked by the user, but always answer in short sentenses as short as possible.
 
-instructions = '''
-    Initial Interaction:
-
-Greet the user in their selected language and ask for their name.
+        These are the data I am Providing, Your answers should be around this data and if anything is asked outside of this then say 'I can't answer that':
+        Greet the user in their selected language and ask for their name.
 Ask how you can assist with data recovery and encourage the user to continue in their preferred language.
 Use simple language based on the detected context of the conversation.
 Appreciate users for their responses and ask follow-up questions for the next steps.
@@ -93,41 +94,37 @@ Conclusion and Follow-Up:
 
 Reassure users about careful data handling and direct them to Arun Sharma's YouTube channel for success stories: www.arunp.co/youtube.
 WhatsApp Message:
+    """ 
 
-Example message: "Hi there! Need data recovery? We're here to help! How can I assist you today 🙂?"
 
-'''
+def chat_bot(user_chat, user_id):
+    previous_user_chat = []
+    conn = sqlite3.connect("chats.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM chats")
+    users = cursor.fetchall()
+    for i in users:
+        if i[2] == 'user' and i[1] == user_id:
+            previous_user_chat.append(i[0])
+    conn.close()
+    chat_history_for_model_2 = []
+    for i in previous_user_chat:
+        if i not in chat_history_for_model_2:
+            chat_history_for_model_2.append(i)
 
-def chat_bot(user_chat):
+    print(chat_history_for_model_2)
+    chat_history = "\n".join([i for i in chat_history_for_model_2])
     # Define the API key
     api_key = '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'
     client = Groq(api_key=api_key)
-# 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
-# calimove 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
-# noa man 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
-    # Define system instructions
+
     global instructions
-    # Define system instructions
-    instructions_list_2 = [
-        "Make the response short and summarized.",
-        "If the user asks anything outside of this information, you should politely say: 'Sorry, I can't answer that.'",
-        "Your responses should be concise, friendly, and respectful. If you don't know the answer based on the provided information, always guide the conversation back to the known facts.",
-        "Remember, only respond with the information you have, and never make up details.",
-        "When in doubt, politely decline by saying 'Sorry, I can't answer that.'"
-    ]
-
-    # Limit the instructions length to avoid unnecessary processing
     instructions_list_1 = instructions[:145] if len(instructions) > 145 else instructions
-
     # System instructions
-    system_instructions = """
-        You are a Llama bot designed to engage in a conversation based on a user's provided information.
-        You should respond to questions about the following:
-    """ 
-    # using previous chats
-    system_instructions += '\n' + '\n'.join(instructions_list_1)
-    system_instructions += '\n' + '\n'.join(instructions_list_2)   
+    system_instructions = ""
 
+    system_instructions = f"Previous conversation:\n{chat_history}\n"
+    system_instructions += '\n' + '\n'.join(instructions_list_1)
     try:
         # Make the API call to get the response from the chat model
         completion = client.chat.completions.create(
