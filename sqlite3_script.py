@@ -31,10 +31,10 @@ cursor = conn.cursor()
 # cursor.execute("INSERT INTO chats (chat, user_ID, role) VALUES (?, ?, ?)", ("Alice", "Bot", "User/Bot", ))
 # conn.commit()
 
-# cursor.execute("SELECT * FROM chats")
-# users = cursor.fetchall()
-# print(users)
-# conn.commit()
+cursor.execute("SELECT * FROM chats")
+users = cursor.fetchall()
+print(users)
+conn.commit()
 # # # Fetch data
 # def test(user_id):
 #     cursor.execute("SELECT * FROM chats")
