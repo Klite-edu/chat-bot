@@ -112,7 +112,6 @@ def chat_bot(user_chat, user_id):
         if i not in chat_history_for_model_2:
             chat_history_for_model_2.append(i)
 
-    print(chat_history_for_model_2)
     chat_history = "\n".join([i for i in chat_history_for_model_2])
     # Define the API key
     api_key = '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'

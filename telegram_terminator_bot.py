@@ -44,22 +44,26 @@ def handle_responses(text, user_id) -> str:
 
     return chat_bot(text, user_id)
 
+combined_text = ''
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_type: str = update.message.chat.type
     text: str = update.message.text
-
-    write_in_db(text, update.message.chat.id, 'user')
-    print(f'User ({update.message.chat.id}) in {message_type}: "{text}"')
+    global combined_text
+    combined_text += ''.join(text)
+    await asyncio.sleep(3)
+    write_in_db(combined_text, update.message.chat.id, 'user')
+    print(f'User ({update.message.chat.id}) in {message_type}: "{combined_text}"')
 
     if message_type == 'group':
-        if BOT_USERNAME in text:
-            new_text: str = text.replace(BOT_USERNAME, '').strip()
+        if BOT_USERNAME in combined_text:
+            new_text: str = combined_text.replace(BOT_USERNAME, '').strip()
             response: str = handle_responses(new_text, update.message.chat.id)
         else:
             return 
     else:
-        response: str = handle_responses(text, update.message.chat.id)
+        response: str = handle_responses(combined_text, update.message.chat.id)
 
+    combined_text = ''
     write_in_db(response, update.message.chat.id, 'bot')
     print(f'Bot {response}')
     await update.message.reply_text(response)
@@ -89,4 +93,4 @@ if __name__ == '__main__':
 
     # Polls the bot
     print('Polling...')
-    app.run_polling(poll_interval=3)
+    app.run_polling(poll_interval=0.1, timeout=1)
