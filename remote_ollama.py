@@ -111,8 +111,10 @@ def chat_bot(user_chat, user_id):
     for i in previous_user_chat:
         if i not in chat_history_for_model_2:
             chat_history_for_model_2.append(i)
-
-    chat_history = "\n".join([i for i in chat_history_for_model_2])
+    if len(chat_history_for_model_2 ) <= 20:
+        chat_history = "\n".join([i for i in chat_history_for_model_2])
+    else:
+        chat_history = "\n".join([i for i in chat_history_for_model_2[-20:]])
     # Define the API key
     api_key = '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'
     client = Groq(api_key=api_key)
