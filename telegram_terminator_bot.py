@@ -1,96 +1,110 @@
+import asyncio
 from typing import Final
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-import pytz
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-import asyncio
-from remote_ollama import chat_bot
 import sqlite3
+from remote_ollama import chat_bot
 
 TOKEN: Final = '7615450891:AAFOtX0zvSeAxPEYdxk-mmeYCwIQ8IJhkcQ'
 BOT_USERNAME: Final = '@tyler_terminator_bot'
 
-timezone = pytz.timezone('Asia/Kolkata')  # IST timezone (you can replace with pytz.utc for UTC)
-
-scheduler = AsyncIOScheduler(timezone=timezone)
+message_queue = None  
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Hello Thanks for chatting with me I am Hal')
+    print("Received /start command")
+    await update.message.reply_text('Hello, Thanks for chatting with me. I am Hal.')
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('I am Hal psl type something so i can respond')
+    print("Received /help command")
+    await update.message.reply_text('I am Hal, please type something so I can respond.')
 
 async def custom_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('This is a custom command')
+    print("Received custom command")
+    await update.message.reply_text('This is a custom command.')
 
-
-def write_in_db(text, user_id, role):
-    conn = sqlite3.connect("chats.db")
-    cursor = conn.cursor()
-
-    # Insert data
-    cursor.execute("INSERT INTO chats (chat, user_ID, role) VALUES (?, ?, ?)", (text,user_id,role, ))
-    conn.commit()
-
-    conn.close()
-
-
-
-
-
-# Responses
-def handle_responses(text, user_id) -> str:
-    processed: str = text.lower()
-
-    return chat_bot(text, user_id)
-
-combined_text = ''
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message_type: str = update.message.chat.type
-    text: str = update.message.text
-    global combined_text
-    combined_text += ''.join(text)
-    await asyncio.sleep(3)
-    write_in_db(combined_text, update.message.chat.id, 'user')
-    print(f'User ({update.message.chat.id}) in {message_type}: "{combined_text}"')
+    print(f"Received message: {update.message.text}")
+    await message_queue.put((update, context))
 
-    if message_type == 'group':
-        if BOT_USERNAME in combined_text:
-            new_text: str = combined_text.replace(BOT_USERNAME, '').strip()
-            response: str = handle_responses(new_text, update.message.chat.id)
-        else:
-            return 
-    else:
-        response: str = handle_responses(combined_text, update.message.chat.id)
+async def process_last_message():
+    global message_queue
+    while True:
+        try:
+            print("Waiting 3 seconds before processing the last message...")
+            await asyncio.sleep(3)  # ✅ Ensure 3 seconds delay
 
-    combined_text = ''
-    write_in_db(response, update.message.chat.id, 'bot')
-    print(f'Bot {response}')
-    await update.message.reply_text(response)
+            if message_queue.empty():
+                print("No new messages in queue. Skipping processing.")
+                continue  # ✅ If queue is empty, continue waiting
 
-# Error handler
-async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f'update {update} caused error {context.error}')
+            update, context = None, None
+            while not message_queue.empty():
+                update, context = await message_queue.get()  # ✅ Get latest message
 
-# Inside the main function
-if __name__ == '__main__':
+            text = update.message.text
+            user_id = update.message.chat.id
+            print(f"Processing latest message: {text} from user {user_id}")
+
+            # 🔴 Step 1: Check if chat_bot() is working
+            try:
+                response = chat_bot(text, user_id)  # ✅ Call chatbot function
+                if not response:
+                    response = "I couldn't understand that."
+                print(f"Bot Response: {response}")
+            except Exception as e:
+                print(f"❌ ERROR: chat_bot() failed: {e}")
+                response = "Oops, I encountered an error!"
+
+            # 🔴 Step 2: Ensure the bot sends a reply
+            try:
+                print("Sending reply to user...")
+                await update.message.reply_text(response)
+                print("✅ Reply sent successfully.")
+            except Exception as e:
+                print(f"❌ ERROR: Failed to send reply: {e}")
+
+        except Exception as e:
+            print(f"❌ ERROR in process_last_message: {e}")
+
+
+async def main():
+    global message_queue
+    message_queue = asyncio.Queue()  # ✅ Ensure queue is initialized
+
     print('Starting bot...')
     app = Application.builder().token(TOKEN).build()
-
-    # Commands
+    
     app.add_handler(CommandHandler('start', start_command))
     app.add_handler(CommandHandler('help', help_command))
     app.add_handler(CommandHandler('custom', custom_command))
-
-    # Messages
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
 
-    # Add error handler
-    app.add_error_handler(error)  # Correct way to add the error handler
+    asyncio.create_task(process_last_message())  # ✅ Runs message processing in background
 
-    # Start the scheduler before running the bot
-    # scheduler.start()
-
-    # Polls the bot
     print('Polling...')
-    app.run_polling(poll_interval=0.1, timeout=1)
+    await app.initialize()
+    
+    try:
+        await app.start()
+        await app.updater.start_polling()
+        print("Bot is running... Press CTRL+C to stop.")
+
+        # ✅ Wait for manual stop (CTRL+C)
+        await asyncio.Future()
+
+    except KeyboardInterrupt:
+        print("\nBot is stopping... Cleaning up.")
+        await app.stop()
+        await app.updater.stop()
+        print("Bot stopped successfully.")
+
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+
+
+
+if __name__ == '__main__':
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    print("Event loop created, starting bot...")
+    loop.run_until_complete(main())
