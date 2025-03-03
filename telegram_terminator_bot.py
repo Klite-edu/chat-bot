@@ -25,6 +25,7 @@ TOKEN: Final = os.getenv("TOKEN")
 BOT_USERNAME: Final = os.getenv("BOT_USERNAME")
 ADMIN_USER_ID = 1103408930
 
+
 # ✅ User message queues
 user_queues = {}
 user_last_message_time = {}
@@ -53,19 +54,21 @@ def save_chat(user_id, chat, role):
 # ✅ Handle images sent by users
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.chat.id
-    user_name = update.message.chat.first_name
+    user_name = update.message.chat.first_name or f"user_{user_id}"  # Default if no name is set
     photo = update.message.photo[-1]  # Get the highest resolution image
     file = await context.bot.get_file(photo.file_id)
 
-    # ✅ Save image to folder
-    image_path = f"images/{user_id}_{int(time.time())}.jpg"
+    # ✅ Create a user-specific directory inside 'images'
+    user_folder = f"images/{user_name.replace(' ', '_')}"  # Replace spaces with underscores for safety
+    os.makedirs(user_folder, exist_ok=True)
+
+    # ✅ Save the image inside the user's folder
+    image_path = f"{user_folder}/{int(time.time())}.jpg"
     await file.download_to_drive(image_path)
 
-    print(f"✅ Image received from {user_id}: {image_path}")
-
-    # ✅ Process image with GPT-4o
+    print(f"✅ Image received from {user_name} ({user_id}): {image_path}")
+     # ✅ Process image with GPT-4o
     response, is_valid = analyze_image(image_path, user_id)
-
     # ✅ Forward image to Admin/Support Team
     if is_valid:
         await context.bot.send_photo(chat_id=ADMIN_USER_ID, photo=file.file_id, caption=(
@@ -107,6 +110,11 @@ def analyze_image(image_path, user_id):
         # ✅ Check if it's a valid hard disk or SSD image
         valid_keywords = ["hard disk", "hdd", "ssd", "storage device", "external drive", "internal drive", "hard drive"]
         if any(keyword in description for keyword in valid_keywords):
+            # ✅ Check for signs of tampering (based on description)
+            tampering_keywords = ["opened", "broken seal", "disassembled", "missing screws", "damaged", "opened cover", "internal parts exposed"]
+            if any(keyword in description for keyword in tampering_keywords):
+                return "❌ It seems like the hard disk has been tampered with or opened. We may not be able to recover data if it's physically damaged.", False
+
             return f"✅ This image appears to be a valid {description}. How can I assist you?", True
         else:
             return "❌ This image does not seem to be a hard disk or SSD. Please send a clear image of your storage device.", False
